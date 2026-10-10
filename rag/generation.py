@@ -43,7 +43,8 @@ SYSTEM_PROMPT = """You are a helpful assistant that answers questions based ONLY
 5. If multiple sources provide conflicting information, mention all perspectives and note the conflict.
 6. Be concise but thorough. Provide direct answers first, then supporting details.
 7. If the question is ambiguous, state your interpretation before answering.
-8. Describe benefits cautiously: grounding can reduce hallucinations, but does not guarantee factual correctness. Do not claim that citations alone prevent hallucinations. Keep the answer short and avoid repeating claims."""
+8. Describe benefits cautiously: grounding can reduce hallucinations, but does not guarantee factual correctness. Do not claim that citations alone prevent hallucinations. Keep the answer short and avoid repeating claims.
+9. Output one factual sentence per line, ending each line with its [Source: filename] citation. Do not add uncited headings or closing text."""
 
 
 def assemble_context(retrieval_result: RetrievalResult) -> str:
@@ -183,12 +184,14 @@ async def generate_answer(query: str, retrieval_result: RetrievalResult) -> dict
     citations = list(set(citation_pattern))
 
     if config.GENERATION_PROVIDER == "groq":
+        from rag.answer_validation import validate_cloud_answer
         allowed_sources = {c.get("metadata", {}).get("source") for c in retrieval_result.chunks}
-        if not citations or any(c not in allowed_sources for c in citations):
-            return {"answer": "The cloud answer did not provide valid source citations.",
+        validation_reason = validate_cloud_answer(answer, allowed_sources)
+        if validation_reason:
+            return {"answer": "The cloud answer failed output validation; please review the available source documents.",
                     "citations": [], "confidence": 0.0,
                     "retrieval_score": retrieval_result.top_score,
-                    "status": "error", "reason": "cloud_invalid_citations"}
+                    "status": "error", "reason": validation_reason}
 
     # Build source list from retrieved chunks
     sources = []

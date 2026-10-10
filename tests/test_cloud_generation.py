@@ -66,6 +66,25 @@ class CloudTests(unittest.TestCase):
             r=asyncio.run(generation.generate_answer('What is RAG?',self.result()))
             self.assertEqual(r['reason'],'cloud_invalid_citations')
 
+    def test_output_validation(self):
+        from rag.answer_validation import validate_cloud_answer as validate
+        allowed={'rag_system_guide.md'}
+        cases=[
+            ('RAG retrieves evidence. [Source: rag_system_guide.md]\nIt can reduce hallucinations. [Source: rag_system_guide.md]',None),
+            ('RAG retrieves evidence. It reduces hallucinations. [Source: rag_system_guide.md]','cloud_citation_placement'),
+            ('Uncited introduction.\nRAG retrieves evidence. [Source: rag_system_guide.md]','cloud_citation_placement'),
+            ('RAG guarantees factual accuracy. [Source: rag_system_guide.md]','cloud_overstated_guarantee'),
+            ('RAG retrieves evidence. [Source: rag_system_guide.md] Extra text','cloud_citation_placement'),
+        ]
+        for answer,reason in cases:
+            with self.subTest(answer=answer):self.assertEqual(validate(answer,allowed),reason)
+
+    def test_invalid_placement_integrated_rejected_no_retry(self):
+        with patch.object(config,'GENERATION_PROVIDER','groq'),patch.object(cloud,'generate_cloud_answer',new=AsyncMock(return_value='RAG retrieves evidence. Another claim. [Source: rag_system_guide.md]')) as remote:
+            r=asyncio.run(generation.generate_answer('What is RAG?',self.result()))
+            self.assertEqual(r['reason'],'cloud_citation_placement')
+            self.assertEqual(r['confidence'],0.0);remote.assert_awaited_once()
+
     def test_mixed_valid_and_invented_citations_rejected(self):
         with patch.object(config,'GENERATION_PROVIDER','groq'),patch.object(cloud,'generate_cloud_answer',new=AsyncMock(return_value='RAG uses evidence. [Source: rag_system_guide.md] Extra claim. [Source: invented.md]')):
             r=asyncio.run(generation.generate_answer('What is RAG?',self.result()))
