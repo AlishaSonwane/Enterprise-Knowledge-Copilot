@@ -512,4 +512,32 @@ Cloud output now fails closed on absent/unknown citations, uncited lines, multip
 Generation instructions request a source citation immediately after every factual sentence and avoid claims that grounding guarantees correctness. Cloud validation rejects absent citations and filenames outside retrieved sources. This filename check does not establish sentence-level evidence support; citation placement and factual support still require review. Prompt instructions are not an enforced factuality guarantee.
 # Low-memory embedding backend
 
+### Windows daily launcher
+
+The prepared Windows shortcut is `Start-Copilot.cmd` in the project folder.
+Double-click it, then open the `Ready:` localhost URL printed in its terminal.
+Keep that terminal open while using the app; Ctrl+C stops the server. Launcher
+offline tests bring the total to 70 passing tests. A bounded real launcher
+smoke test passed homepage, OpenAPI and logs HTTP checks, clean shutdown, port
+release and original database integrity, without cloud generation.
+
+`run_windows.py` loads only the Groq settings from the private local `.env` and
+uses a private `.launcher.json` profile containing local Python, ONNX model,
+tokenizer and optional verified native-runtime directory paths. These local
+files are ignored by Git. It never installs or downloads anything, prints API
+keys, changes PATH, or starts Ollama generation. A per-machine
+`Start-Copilot.cmd` starts the prepared interpreter without PowerShell policies.
+
+The launcher checks at least 1.5 GiB available RAM before startup, binds only
+127.0.0.1 on a free port, prints the browser URL when ready and monitors memory.
+Use Ctrl+C in its terminal to stop cleanly. It stops at severe pressure below
+0.5 GiB, after a 90-second startup timeout, or after one hour by default
+(`--max-seconds` allows 1–14400 seconds). Logs remain in ignored `data/launcher/`.
+`--smoke-test` checks homepage, OpenAPI and logs using a copied index, then exits;
+it never calls cloud generation. Normal sessions use the original project
+index, so uploads and indexing persist. The Free-plan acknowledgment is not
+proof of billing tier; keep the Groq account on Free. Cloud queries transmit
+retrieved text, so use public sample documents until data-sharing permission
+has been established for private material.
+
 Set `EMBEDDING_BACKEND=onnx` with explicit local `ONNX_MODEL_PATH` and `ONNX_TOKENIZER_PATH`. The default remains `torch`. ONNX uses already installed ONNX Runtime and tokenizers directly, avoiding Torch imports, CPU only, batches capped at eight. The pinned official model SHA-256 is checked before loading; no automatic download or fallback occurs. Matching MiniLM tokenization, 256-token truncation, masked mean pooling and L2 normalization preserve the embedding space. A copied seven-chunk Windows index comparison gave minimum cosine 0.99999994 and maximum absolute difference 1.49e-7. This is sample compatibility evidence, not a universal equivalence or memory guarantee. Model files and paths containing secrets must not be committed.

@@ -1,4 +1,7 @@
 # Secrets
+.launcher.json
+Start-Copilot.cmd
+data/launcher/
 .env
 .env.*
 !.env.example
