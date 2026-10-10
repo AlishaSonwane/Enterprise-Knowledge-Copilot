@@ -66,6 +66,7 @@
                 <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px;">
                     Ask Your Documents
                 </h2>
+                <p id="generation-notice" style="color:var(--text-dim);font-size:13px;margin-bottom:12px">Checking generation settings...</p>
                 <div class="query-box">
                     <textarea id="query-input" placeholder="Ask a question about your documents..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitQuery()}"></textarea>
                     <button onclick="submitQuery()" id="submit-btn">Search</button>
@@ -115,7 +116,7 @@
                     <span class="pipe-arrow">&#8594;</span>
                     <div class="pipe-step">Context Assembly</div>
                     <span class="pipe-arrow">&#8594;</span>
-                    <div class="pipe-step highlight">Ollama LLM<br><small>llama3.2</small></div>
+                    <div class="pipe-step highlight">Configured LLM<br><small id="generation-model">Local or cloud provider</small></div>
                     <span class="pipe-arrow">&#8594;</span>
                     <div class="pipe-step">Answer + Citations</div>
                 </div>
@@ -163,8 +164,8 @@
                 <div class="info-card">
                     <h3>5. Generation & Grounding</h3>
                     <ul>
-                        <li>Ollama LLM (llama3.2) with low temperature (0.1)</li>
-                        <li>System prompt enforces source-only answers</li>
+                        <li>Configured local Ollama or cloud Groq provider, temperature 0.1</li>
+                        <li>System prompt requests source-supported answers; factuality still needs review</li>
                         <li>Mandatory citation format [Source: filename]</li>
                         <li>Abstention when context is insufficient</li>
                         <li>Context deduplication and compression</li>
@@ -175,7 +176,7 @@
                     <ul>
                         <li>Prompt injection detection (pattern matching)</li>
                         <li>Query length limits</li>
-                        <li>Retrieval confidence thresholds</li>
+                        <li>Provisional cosine evidence threshold (0.30); not a correctness probability</li>
                         <li>Graceful fallback: "I don't know" responses</li>
                         <li>Abstention when retrieval score too low</li>
                     </ul>

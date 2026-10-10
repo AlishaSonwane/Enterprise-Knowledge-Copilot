@@ -52,6 +52,12 @@ async function loadDocuments() {
         const res = await fetch('/api/stats');
         const data = await res.json();
         const container = document.getElementById('doc-list-items');
+        if (data.config) {
+            document.getElementById('generation-model').textContent = `${data.config.generation_provider}: ${data.config.generation_model}`;
+            document.getElementById('generation-notice').textContent = data.config.generation_provider === 'groq'
+                ? 'Cloud answers send your question and retrieved passages to Groq. Use public or approved documents. Answers and citations still need review.'
+                : 'Local generation. Evidence similarity is not a probability that an answer is correct.';
+        }
 
         if (!data.documents || data.documents.length === 0) {
             container.innerHTML = '<p style="font-size:13px; color:var(--text-dim); padding:8px;">No documents yet. Upload some files to get started.</p>';
@@ -60,11 +66,12 @@ async function loadDocuments() {
 
         container.innerHTML = data.documents.map(doc => `
             <div class="doc-item">
-                <span class="name" title="${doc.name}">${doc.name}</span>
+                <span class="name" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</span>
                 <span class="size">${formatSize(doc.size)}</span>
-                <button class="delete-btn" onclick="deleteDoc('${doc.name}')" title="Delete">&#10005;</button>
+                <button class="delete-btn" data-filename="${escapeHtml(doc.name)}" title="Delete">&#10005;</button>
             </div>
         `).join('');
+        container.querySelectorAll('.delete-btn').forEach(button => button.addEventListener('click', () => deleteDoc(button.dataset.filename)));
     } catch (e) {
         document.getElementById('doc-list-items').innerHTML = '<p style="color:var(--danger); font-size:13px; padding:8px;">Failed to load documents</p>';
     }
@@ -119,9 +126,10 @@ async function submitQuery() {
             }),
         });
         const data = await res.json();
+        if (!res.ok) throw new Error('Query request failed. Check the launcher logs.');
         renderAnswer(query, data);
     } catch (e) {
-        container.innerHTML = `<div class="answer-card"><div class="answer-body" style="color:var(--danger)">Error: ${e.message}</div></div>`;
+        container.innerHTML = `<div class="answer-card"><div class="answer-body" style="color:var(--danger)">Error: ${escapeHtml(e.message)}</div></div>`;
     }
 
     btn.disabled = false;
@@ -131,7 +139,7 @@ async function submitQuery() {
 function renderAnswer(query, data) {
     const container = document.getElementById('answer-container');
     const idx = queryCount++;
-    const statusClass = data.status || 'success';
+    const statusClass = ['success','error','blocked'].includes(data.status) ? data.status : 'error';
     const statusLabel = { success: 'Answer Generated', error: 'Error', blocked: 'Blocked by Guardrails' }[statusClass] || statusClass;
 
     let html = `
@@ -143,13 +151,14 @@ function renderAnswer(query, data) {
                 </div>
                 <div class="answer-meta">
                     <span>Latency: ${data.latency_ms || '?'}ms</span>
-                    <span>Confidence: ${(data.confidence * 100).toFixed(1)}%</span>
+                    <span title="Cosine similarity; not an answer-correctness probability">Evidence: ${formatEvidence(data.retrieval_score ?? data.confidence)}</span>
                     <span>Chunks: ${data.chunks_used || 0}</span>
                 </div>
             </div>
             <div class="answer-body">${formatAnswer(data.answer || 'No answer available.')}</div>
-            ${data.citations && data.citations.length ? `<div style="margin-top:12px; font-size:12px; color:var(--text-dim);">Citations: ${data.citations.join(', ')}</div>` : ''}
-            ${data.query_rewritten && data.query_rewritten !== query ? `<div style="margin-top:8px; font-size:12px; color:var(--text-dim);">Query rewritten: "${data.query_rewritten}"</div>` : ''}
+            <div style="margin-top:8px;font-size:12px;color:var(--text-dim)">Evidence is cosine similarity, not a correctness probability. The 0.30 threshold is provisional; citations do not prove factual support.</div>
+            ${data.citations && data.citations.length ? `<div style="margin-top:12px; font-size:12px; color:var(--text-dim);">Citations: ${escapeHtml(data.citations.join(', '))}</div>` : ''}
+            ${data.query_rewritten && data.query_rewritten !== query ? `<div style="margin-top:8px; font-size:12px; color:var(--text-dim);">Query rewritten: "${escapeHtml(data.query_rewritten)}"</div>` : ''}
             <div class="feedback-buttons">
                 <button class="feedback-btn" onclick="sendFeedback(${idx}, 'thumbs_up', this)">&#128077; Helpful</button>
                 <button class="feedback-btn" onclick="sendFeedback(${idx}, 'thumbs_down', this)">&#128078; Not Helpful</button>
@@ -163,8 +172,8 @@ function renderAnswer(query, data) {
             html += `
                 <div class="source-card">
                     <div class="source-header">
-                        <span>[${i+1}] ${src.source} (Section ${src.chunk_index})</span>
-                        <span class="source-score">Score: ${(src.score * 100).toFixed(1)}%</span>
+                        <span>[${i+1}] ${escapeHtml(src.source)} (Section ${src.chunk_index})</span>
+                        <span class="source-score">Evidence: ${formatEvidence(src.score)}</span>
                     </div>
                     <div class="source-preview">${escapeHtml(src.preview)}</div>
                 </div>
@@ -237,8 +246,8 @@ function renderMetrics(stats) {
                 <div class="metric-label">Avg Latency</div>
             </div>
             <div class="metric-card">
-                <div class="metric-value">${(m.avg_retrieval_score * 100).toFixed(1)}%</div>
-                <div class="metric-label">Avg Retrieval Score</div>
+                <div class="metric-value">${formatEvidence(m.avg_retrieval_score)}</div>
+                <div class="metric-label">Avg Cosine Evidence</div>
             </div>
             <div class="metric-card">
                 <div class="metric-value">${m.avg_chunks_used.toFixed(1)}</div>
@@ -267,7 +276,7 @@ function renderConfig(cfg) {
             ${Object.entries(cfg).map(([k, v]) => `
                 <div class="config-item">
                     <span class="key">${k.replace(/_/g, ' ')}</span>
-                    <span class="value">${v}</span>
+                    <span class="value">${escapeHtml(String(v))}</span>
                 </div>
             `).join('')}
         </div>
@@ -299,7 +308,7 @@ function renderLogs(logs) {
                         <td>${new Date(log.timestamp).toLocaleTimeString()}</td>
                         <td title="${escapeHtml(log.query)}">${escapeHtml(log.query.substring(0, 50))}</td>
                         <td><span class="status-dot ${log.status}" style="display:inline-block; margin-right:4px;"></span>${log.status}</td>
-                        <td>${(log.top_score * 100).toFixed(1)}%</td>
+                        <td>${formatEvidence(log.top_score)}</td>
                         <td>${log.num_chunks_retrieved}</td>
                         <td>${log.latency_ms.toFixed(0)}ms</td>
                         <td>${log.user_feedback || '-'}</td>
@@ -320,7 +329,11 @@ function formatSize(bytes) {
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function formatEvidence(score) {
+    return typeof score === 'number' && Number.isFinite(score) && score >= -1 && score <= 1 ? score.toFixed(3) : 'Unavailable';
 }
 
 function showToast(msg, type = '') {

@@ -505,6 +505,34 @@ original workspace and is not a portable installation requirement. Do not copy
 arbitrary DLLs or Windows virtual environments to other machines.
 # Citation quality limitation
 
+UI scores now show cosine evidence as decimals (for example 0.363), not
+"Confidence 36.3%". The API's legacy `confidence` field remains compatible.
+Blocked responses can have high topical similarity without answer support.
+Monitoring and architecture show the configured generation provider/backend;
+the cloud notice explains that questions and retrieved passages go to Groq.
+Metadata is escaped before HTML rendering and HTTP errors are not shown as
+generated answers. Private documents require permission to share their content.
+
+Frontend offline checks: `node tests/frontend_checks.cjs` (no extra libraries or
+live requests). The Python suite also checks public provider metadata without
+exposing keys or loading native infrastructure.
+
+### Demo completion and remaining limitations
+
+Final UI/configuration checks: 71 Python offline tests and 11 JavaScript checks
+passed. Core live RAG, ML/HNSW answers, pricing abstention and launcher startup
+were verified as documented above. Restart the launcher after backend changes
+and refresh the browser to load updated UI assets. No folders were removed or
+migrated, and no indexed documents were changed by these finishing edits.
+
+This is a functioning local demonstration, not a production certification.
+The cosine threshold is provisional; pricing support checks are narrowly scoped,
+and citation formatting/source membership are not factual entailment checks.
+Free cloud quotas can produce rate-limit errors. PDF/DOCX upload edge cases,
+large corpora, multi-user access and private-data compliance have not undergone
+comprehensive validation. Keep the app bound to localhost, use approved
+documents and review factual claims before relying on them.
+
 Cloud transport requests a JSON `claims` array with one sentence and an exact source filename per claim. It rejects malformed structures and renders `[Source: filename]` itself. The application still checks source membership and output validation before returning success. No JSON API mode is assumed: a model that ignores the requested structure fails closed, without repair or retry. Rendered citations do not establish factual support.
 
 Cloud output now fails closed on absent/unknown citations, uncited lines, multiple sentences sharing one trailing citation, and a narrow set of overstated guarantee phrases. Generation requests one sentence per line. These conservative formatting/phrase heuristics may reject abbreviations or valid negated statements; they do not determine entailment or catch all unsupported claims. Rejections return an error with zero confidence, suppress the rejected answer, and do not retry or fall back to Ollama.

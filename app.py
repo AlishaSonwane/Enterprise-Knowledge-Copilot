@@ -173,6 +173,9 @@ async def get_stats():
         "metrics": asdict(eval_metrics),
         "documents": docs,
         "config": {
+            "generation_provider": config.GENERATION_PROVIDER,
+            "generation_model": config.GROQ_MODEL if config.GENERATION_PROVIDER == 'groq' else config.OLLAMA_MODEL,
+            "embedding_backend": config.EMBEDDING_BACKEND,
             "ollama_model": config.OLLAMA_MODEL,
             "embedding_model": config.EMBEDDING_MODEL,
             "chunk_size": config.CHUNK_SIZE,
@@ -221,4 +224,4 @@ async def delete_document(filename: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
