@@ -27,6 +27,13 @@ OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:latest")
 # Embedding
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 EMBEDDING_DIMENSION = 384
+EMBEDDING_BACKEND = os.environ.get('EMBEDDING_BACKEND','torch').strip().lower()
+if EMBEDDING_BACKEND not in ('torch','onnx'):
+    raise ValueError('EMBEDDING_BACKEND must be torch or onnx')
+ONNX_MODEL_PATH = os.environ.get('ONNX_MODEL_PATH','')
+ONNX_TOKENIZER_PATH = os.environ.get('ONNX_TOKENIZER_PATH','')
+if EMBEDDING_BACKEND == 'onnx' and (not ONNX_MODEL_PATH or not ONNX_TOKENIZER_PATH):
+    raise ValueError('ONNX backend requires explicit local model and tokenizer paths')
 
 # Chunking
 CHUNK_SIZE = 300  # tokens (approx words)

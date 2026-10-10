@@ -3,18 +3,22 @@
 from functools import lru_cache
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 import config
 
 _model = None
 
 
-def get_model() -> SentenceTransformer:
+def get_model():
     """Lazy-load the embedding model."""
     global _model
     if _model is None:
-        _model = SentenceTransformer(config.EMBEDDING_MODEL)
+        if config.EMBEDDING_BACKEND == 'onnx':
+            from rag.onnx_embeddings import MiniLM
+            _model = MiniLM(config.ONNX_MODEL_PATH,config.ONNX_TOKENIZER_PATH)
+        else:
+            from sentence_transformers import SentenceTransformer
+            _model = SentenceTransformer(config.EMBEDDING_MODEL)
     return _model
 
 
