@@ -467,14 +467,20 @@ original upstream attribution. Private visibility does not replace secret hygien
 
 ### Verified status of this Windows/cloud checkpoint
 
-54 offline tests passed (38 existing plus 16 cloud tests). A single live Groq
-request using previously retrieved public sample evidence succeeded in 1.31s.
-It cited rag_system_guide.md, but overstated that grounding guarantees supported
-answers and did not cite every claim. This is not a strict answer-quality pass.
-Full FastAPI /api/query validation stopped before startup because available RAM
-was below the retained 1.5 GiB preflight limit. Do not claim full cloud integration
-has passed yet. Cloud generation removes local LLM loading; local embedding RAM
-is still required. No original indexed data is included in this repository.
+65 offline tests passed. On 2026-10-10 a real loopback FastAPI `/api/query`
+test passed using the optional ONNX backend, a copy of the existing seven-chunk
+index and one Groq request. Startup, OpenAPI and query HTTP statuses passed;
+fresh retrieval top cosine was 0.36298578 and endpoint latency was 1558.7 ms.
+Structured answer citation/output checks passed, and all three claims cited
+`rag_system_guide.md`. The definition and retrieval mechanism match the source;
+the hallucination-reduction explanation is broadly supported, though "ensuring"
+is stronger wording than ideal and must not be read as a correctness guarantee.
+This is one question's integration evidence, not general factuality validation.
+Initial available RAM was 1.5766 GiB; minimum sampled RAM was 1.3429 GiB
+(one-second samples, not an exact instantaneous peak), maximum sampled load 77%.
+Server shutdown and port release passed, with no original project file changes.
+The independent 1.5 GiB startup gate and 0.5 GiB severe-pressure stop remain.
+No original indexed data, models or secrets are included in this repository.
 
 Run offline tests: `python -I -B tests/run_offline.py` using the project's compatible
 Python 3.11 environment and installed dependencies. Native model imports are
