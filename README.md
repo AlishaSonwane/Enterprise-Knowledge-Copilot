@@ -486,6 +486,8 @@ original workspace and is not a portable installation requirement. Do not copy
 arbitrary DLLs or Windows virtual environments to other machines.
 # Citation quality limitation
 
+Cloud transport requests a JSON `claims` array with one sentence and an exact source filename per claim. It rejects malformed structures and renders `[Source: filename]` itself. The application still checks source membership and output validation before returning success. No JSON API mode is assumed: a model that ignores the requested structure fails closed, without repair or retry. Rendered citations do not establish factual support.
+
 Cloud output now fails closed on absent/unknown citations, uncited lines, multiple sentences sharing one trailing citation, and a narrow set of overstated guarantee phrases. Generation requests one sentence per line. These conservative formatting/phrase heuristics may reject abbreviations or valid negated statements; they do not determine entailment or catch all unsupported claims. Rejections return an error with zero confidence, suppress the rejected answer, and do not retry or fall back to Ollama.
 
 Generation instructions request a source citation immediately after every factual sentence and avoid claims that grounding guarantees correctness. Cloud validation rejects absent citations and filenames outside retrieved sources. This filename check does not establish sentence-level evidence support; citation placement and factual support still require review. Prompt instructions are not an enforced factuality guarantee.

@@ -1,5 +1,5 @@
 """Offline cloud regressions: no credentials, native model loading or live HTTP."""
-import asyncio, os, unittest
+import asyncio, os, unittest, json
 from unittest.mock import AsyncMock, Mock, patch
 import httpx
 import config
@@ -9,7 +9,7 @@ from test_regressions import generation, retrieval
 class CloudTests(unittest.TestCase):
     def invoke(self,status=200,body=None,error=None):
         response=Mock(status_code=status)
-        response.json.return_value=body or {'choices':[{'finish_reason':'stop','message':{'content':'RAG uses evidence. [Source: rag_system_guide.md]'}}]}
+        response.json.return_value=body or {'choices':[{'finish_reason':'stop','message':{'content':json.dumps({'claims':[{'text':'RAG uses evidence.','source':'rag_system_guide.md'}]})}}]}
         client=Mock();client.post=AsyncMock(return_value=response,side_effect=error)
         manager=Mock();manager.__aenter__=AsyncMock(return_value=client);manager.__aexit__=AsyncMock(return_value=False)
         with patch.dict(os.environ,{'GROQ_FREE_PLAN_CONFIRMED':'1','GROQ_API_KEY':'test-secret'}),patch.object(cloud.httpx,'AsyncClient',return_value=manager):
@@ -23,6 +23,34 @@ class CloudTests(unittest.TestCase):
         self.assertEqual(args.args[0],'https://api.groq.com/openai/v1/chat/completions')
         self.assertEqual(args.kwargs['json']['model'],'openai/gpt-oss-20b')
         self.assertFalse(args.kwargs['json']['stream'])
+        self.assertEqual(args.kwargs['json']['messages'][0]['content'],cloud.STRUCTURED_INSTRUCTION)
+
+    def test_structured_invalid_responses(self):
+        for value in ('plain answer', '{}', '{"claims":[]}', '{"claims":[{"text":"x"}]}',
+                      '{"claims":[{"text":"x [Source: invented.md]","source":"real.md"}]}',
+                      '{"claims":[{"text":"x","source":""}]}'):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(cloud.CloudGenerationError,'cloud_invalid_structure'):
+                    cloud.render_structured_answer(value)
+
+    def test_structured_render_preserves_claim_and_source(self):
+        value={'claims':[{'text':'RAG retrieves documents.','source':'rag_system_guide.md'},
+                         {'text':'Grounding can reduce hallucinations.','source':'rag_system_guide.md'}]}
+        rendered=cloud.render_structured_answer(json.dumps(value))
+        self.assertEqual(rendered,'RAG retrieves documents. [Source: rag_system_guide.md]\nGrounding can reduce hallucinations. [Source: rag_system_guide.md]')
+
+    def test_structured_system_preserves_original_without_mutation(self):
+        messages=[{'role':'system','content':'Original grounding rules.'},{'role':'user','content':'Context'}]
+        response=Mock(status_code=200)
+        response.json.return_value={'choices':[{'finish_reason':'stop','message':{'content':json.dumps({'claims':[{'text':'RAG retrieves evidence.','source':'rag_system_guide.md'}]})}}]}
+        client=Mock();client.post=AsyncMock(return_value=response)
+        manager=Mock();manager.__aenter__=AsyncMock(return_value=client);manager.__aexit__=AsyncMock(return_value=False)
+        with patch.dict(os.environ,{'GROQ_FREE_PLAN_CONFIRMED':'1','GROQ_API_KEY':'test-secret'}),patch.object(cloud.httpx,'AsyncClient',return_value=manager):
+            asyncio.run(cloud.generate_cloud_answer(messages))
+        self.assertEqual(messages[0]['content'],'Original grounding rules.')
+        sent=client.post.call_args.kwargs['json']['messages']
+        self.assertTrue(sent[0]['content'].startswith('Original grounding rules.'))
+        self.assertTrue(sent[0]['content'].endswith(cloud.STRUCTURED_INSTRUCTION))
     def test_rate_limit(self):self.assertEqual(self.invoke(429)[0],'cloud_rate_limited')
     def test_auth_failure(self):self.assertEqual(self.invoke(401)[0],'cloud_auth_error')
     def test_http_failure(self):self.assertEqual(self.invoke(500)[0],'cloud_http_error')
