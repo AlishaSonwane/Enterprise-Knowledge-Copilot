@@ -60,3 +60,13 @@ class CloudTests(unittest.TestCase):
         with patch.object(config,'GENERATION_PROVIDER','groq'),patch.object(cloud,'generate_cloud_answer',new=AsyncMock(return_value='Answer. [Source: invented.md]')):
             r=asyncio.run(generation.generate_answer('What is RAG?',self.result()))
             self.assertEqual(r['reason'],'cloud_invalid_citations')
+
+    def test_missing_citation_rejected(self):
+        with patch.object(config,'GENERATION_PROVIDER','groq'),patch.object(cloud,'generate_cloud_answer',new=AsyncMock(return_value='RAG uses retrieved evidence.')):
+            r=asyncio.run(generation.generate_answer('What is RAG?',self.result()))
+            self.assertEqual(r['reason'],'cloud_invalid_citations')
+
+    def test_mixed_valid_and_invented_citations_rejected(self):
+        with patch.object(config,'GENERATION_PROVIDER','groq'),patch.object(cloud,'generate_cloud_answer',new=AsyncMock(return_value='RAG uses evidence. [Source: rag_system_guide.md] Extra claim. [Source: invented.md]')):
+            r=asyncio.run(generation.generate_answer('What is RAG?',self.result()))
+            self.assertEqual(r['reason'],'cloud_invalid_citations')

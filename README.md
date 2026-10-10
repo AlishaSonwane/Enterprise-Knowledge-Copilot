@@ -484,3 +484,6 @@ Windows prerequisites include compatible x64 native runtime dependencies for
 ONNX Runtime. The earlier process-local DLL cache workaround was specific to the
 original workspace and is not a portable installation requirement. Do not copy
 arbitrary DLLs or Windows virtual environments to other machines.
+# Citation quality limitation
+
+Generation instructions request a source citation immediately after every factual sentence and avoid claims that grounding guarantees correctness. Cloud validation rejects absent citations and filenames outside retrieved sources. This filename check does not establish sentence-level evidence support; citation placement and factual support still require review. Prompt instructions are not an enforced factuality guarantee.

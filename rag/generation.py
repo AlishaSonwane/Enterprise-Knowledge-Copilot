@@ -38,11 +38,12 @@ SYSTEM_PROMPT = """You are a helpful assistant that answers questions based ONLY
 
 1. ONLY use information from the provided context to answer the question.
 2. If the context does not contain enough information to answer, say "I don't have enough information in the available documents to answer this question."
-3. ALWAYS cite your sources using [Source: filename] format after each claim.
+3. ALWAYS cite your sources using [Source: filename] format immediately after each factual sentence. Use the exact filename shown in the context. A single citation at the end of a multi-paragraph answer is insufficient.
 4. Do NOT make up or hallucinate information not present in the context.
 5. If multiple sources provide conflicting information, mention all perspectives and note the conflict.
 6. Be concise but thorough. Provide direct answers first, then supporting details.
-7. If the question is ambiguous, state your interpretation before answering."""
+7. If the question is ambiguous, state your interpretation before answering.
+8. Describe benefits cautiously: grounding can reduce hallucinations, but does not guarantee factual correctness. Do not claim that citations alone prevent hallucinations. Keep the answer short and avoid repeating claims."""
 
 
 def assemble_context(retrieval_result: RetrievalResult) -> str:
