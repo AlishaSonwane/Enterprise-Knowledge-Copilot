@@ -52,11 +52,14 @@ async function loadDocuments() {
         const res = await fetch('/api/stats');
         const data = await res.json();
         const container = document.getElementById('doc-list-items');
-        if (data.config) {
+        if (data.config && data.config.generation_provider) {
             document.getElementById('generation-model').textContent = `${data.config.generation_provider}: ${data.config.generation_model}`;
             document.getElementById('generation-notice').textContent = data.config.generation_provider === 'groq'
                 ? 'Cloud answers send your question and retrieved passages to Groq. Use public or approved documents. Answers and citations still need review.'
                 : 'Local generation. Evidence similarity is not a probability that an answer is correct.';
+        } else {
+            document.getElementById('generation-model').textContent = 'Restart launcher to load provider settings';
+            document.getElementById('generation-notice').textContent = 'Generation settings unavailable. Restart the launcher before sending private documents; cloud generation may transmit retrieved passages.';
         }
 
         if (!data.documents || data.documents.length === 0) {

@@ -519,7 +519,7 @@ exposing keys or loading native infrastructure.
 
 ### Demo completion and remaining limitations
 
-Final UI/configuration checks: 71 Python offline tests and 11 JavaScript checks
+Final UI/configuration checks: 71 Python offline tests and 12 JavaScript checks
 passed. Core live RAG, ML/HNSW answers, pricing abstention and launcher startup
 were verified as documented above. Restart the launcher after backend changes
 and refresh the browser to load updated UI assets. No folders were removed or

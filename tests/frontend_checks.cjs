@@ -8,6 +8,9 @@ let checks=0;function check(name,fn){fn();checks++;console.log('PASS '+name)}
 (async()=>{
  await context.loadDocuments();
  check('cloud notice',()=>assert.match(elements.get('generation-notice').textContent,/passages to Groq/));
+ context.fetch=async()=>({ok:true,json:async()=>({documents:[],config:{}})});
+ await context.loadDocuments();
+ check('older server not mislabeled local',()=>assert.match(elements.get('generation-notice').textContent,/settings unavailable/));
  check('score scale',()=>assert.equal(context.formatEvidence(.362985),'0.363'));
  check('negative cosine',()=>assert.equal(context.formatEvidence(-.5),'-0.500'));
  check('invalid evidence',()=>{for(const v of [null,undefined,NaN,Infinity,'0.8',1.2])assert.equal(context.formatEvidence(v),'Unavailable')});
