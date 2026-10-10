@@ -1,0 +1,5 @@
+{
+  "python": "C:\\path\\to\\venv311\\Scripts\\python.exe",
+  "model": "C:\\path\\to\\model.onnx",
+  "tokenizer": "C:\\path\\to\\tokenizer.json"
+}

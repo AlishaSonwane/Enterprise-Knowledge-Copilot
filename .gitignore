@@ -57,3 +57,8 @@ uploads/
 documents/**
 *.pem
 *.key
+
+# Only these verified public upstream samples are versioned.
+!documents/machine_learning_basics.md
+!documents/rag_system_guide.md
+!documents/vector_databases.md
