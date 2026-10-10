@@ -482,6 +482,19 @@ Server shutdown and port release passed, with no original project file changes.
 The independent 1.5 GiB startup gate and 0.5 GiB severe-pressure stop remain.
 No original indexed data, models or secrets are included in this repository.
 
+Additional real endpoint checks (2026-10-10): supervised versus unsupervised
+learning returned source-supported definitions/examples with citations to
+`machine_learning_basics.md` in 1298.3 ms (top cosine 0.56456). HNSW returned
+graph structure, speed/recall and memory tradeoffs with `vector_databases.md`
+citations in 1106.6 ms (top cosine 0.31344); its recall statement omitted the
+source's "typically" qualifier, so treat this as a remaining wording limitation.
+The unsupported company-private pricing question scored 0.37944 but correctly
+returned `blocked / insufficient_evidence_support`, with zero cloud calls.
+All three endpoint expectations passed; only two cloud calls occurred. Server
+shutdown, port release and original-file integrity checks passed. These sample
+checks do not calibrate the provisional 0.30 threshold or validate all factual
+questions.
+
 Run offline tests: `python -I -B tests/run_offline.py` using the project's compatible
 Python 3.11 environment and installed dependencies. Native model imports are
 blocked and no live services are required.
